@@ -1,0 +1,18 @@
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+sqlalchemy>=2.0.36
+psycopg2-binary>=2.9.10
+pydantic>=2.10.0
+email-validator>=2.0.0
+python-dotenv>=1.0.0
+
+# Authentication (app/core/auth.py)
+supabase>=2.0.0
+python-jose>=3.3.0
+passlib[bcrypt]>=1.7.4
+# passlib 1.7.4 is incompatible with bcrypt 5.x (password hashing raises ValueError)
+bcrypt>=4.0.1,<5.0.0
+
+# Scripts (seed data, manual API test scripts)
+faker>=33.0.0
+requests>=2.31.0
