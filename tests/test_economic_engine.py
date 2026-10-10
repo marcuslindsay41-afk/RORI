@@ -22,6 +22,8 @@ class TestEconomicEngine(unittest.TestCase):
             created_at=datetime.now(),
         )
 
+    # TEST 1: Successful economic cycle
+
     def test_successful_economic_cycle(self):
         decision = self.make_decision()
 
@@ -67,6 +69,8 @@ class TestEconomicEngine(unittest.TestCase):
             "verified",
         )
 
+    # TEST 2: Decision not executed
+
     def test_decision_not_executed(self):
         decision = self.make_decision()
 
@@ -78,6 +82,110 @@ class TestEconomicEngine(unittest.TestCase):
             0.90,
             0.95,
             "test-cycle-002",
+        )
+
+        self.assertNotEqual(
+            result.verification.status.value,
+            "strong",
+        )
+
+        self.assertFalse(
+            result.learning.verified,
+        )
+
+    # TEST 3: Zero economic impact
+
+    def test_zero_economic_impact(self):
+        decision = self.make_decision()
+
+        result = self.engine.complete_cycle(
+            decision,
+            1000.0,
+            1000.0,
+            True,
+            0.90,
+            0.95,
+            "test-zero-impact",
+        )
+
+        self.assertEqual(
+            result.measurement.economic_impact,
+            0.0,
+        )
+
+        self.assertEqual(
+            result.learning.prediction_error,
+            -143.0,
+        )
+
+    # TEST 4: Negative economic impact
+
+    def test_negative_economic_impact(self):
+        decision = self.make_decision()
+
+        result = self.engine.complete_cycle(
+            decision,
+            1000.0,
+            900.0,
+            True,
+            0.90,
+            0.95,
+            "test-negative-impact",
+        )
+
+        self.assertEqual(
+            result.measurement.economic_impact,
+            -100.0,
+        )
+
+        self.assertEqual(
+            result.learning.prediction_error,
+            -243.0,
+        )
+
+    # TEST 5: Low-quality evidence
+
+    def test_low_quality_evidence(self):
+        decision = self.make_decision()
+
+        result = self.engine.complete_cycle(
+            decision,
+            1000.0,
+            1140.0,
+            True,
+            0.20,
+            0.20,
+            "test-low-evidence",
+        )
+
+        self.assertNotEqual(
+            result.verification.status.value,
+            "strong",
+        )
+
+        self.assertLess(
+            result.verification.confidence,
+            0.50,
+        )
+
+        self.assertFalse(
+            result.learning.verified,
+        )
+
+    # TEST 6: Failed execution
+
+
+    def test_failed_execution(self):
+        decision = self.make_decision()
+
+        result = self.engine.complete_cycle(
+            decision,
+            1000.0,
+            900.0,
+            False,
+            0.90,
+            0.95,
+            "test-failed-execution",
         )
 
         self.assertNotEqual(
