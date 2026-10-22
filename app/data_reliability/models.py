@@ -55,7 +55,7 @@ class InventoryRecord:
         for field in fields:
             value = getattr(self, field)
 
-            if value is None:
+            if value is None and field == "physical_count":
                 continue
 
             if not isinstance(value, Decimal):

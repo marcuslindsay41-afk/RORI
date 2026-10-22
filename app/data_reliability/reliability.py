@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
+from decimal import Decimal
 from typing import Optional
 
 from app.data_reliability.models import (
@@ -95,12 +96,20 @@ def assess_reliability(
             reason="Unrecognized reliability state.",
         )
 
-    if (
-        result.actual_inventory is None
-        or result.unexplained_variance is None
-        or result.unexplained_variance != 0
-        or result.verification_required
-    ):
+    # Results can be constructed by callers rather than by reconcile_inventory.
+    # Validate the quantities before arithmetic and independently verify the
+    # claimed variance; a RELIABLE label alone is not evidence of consistency.
+    quantities = (result.expected_inventory, result.actual_inventory,
+                  result.unexplained_variance)
+    valid_quantities = all(isinstance(value, Decimal) and value.is_finite()
+                           for value in quantities)
+    consistent = False
+    if valid_quantities and result.expected_inventory >= 0 and result.actual_inventory >= 0:
+        actual_variance = result.actual_inventory - result.expected_inventory
+        consistent = (actual_variance == result.unexplained_variance
+                      and actual_variance == 0)
+
+    if not consistent or result.verification_required:
         return ReliabilityAssessment(
             restaurant_id=result.restaurant_id,
             item_id=result.item_id,

@@ -51,8 +51,23 @@ def test_invalid_inventory_inputs_rejected(field, value, error):
         inventory_record(**{field: value})
 
 
+def test_required_movement_cannot_be_none():
+    # Only physical_count is Optional. Missing receipts must not construct an
+    # apparently valid record which fails later during reconciliation arithmetic.
+    with pytest.raises((TypeError, ValueError)):
+        inventory_record(receipts=None)
 
 
+def test_contradictory_count_and_variance_cannot_be_decision_eligible():
+    result = ReconciliationResult(
+        restaurant_id=101, item_id='ingredient', unit='kg',
+        expected_inventory=Decimal('100'), actual_inventory=Decimal('90'),
+        unexplained_variance=Decimal('0'), reliability_state=ReliabilityState.RELIABLE,
+        verification_required=False, reason='Contradictory upstream evidence',
+    )
+    assessment = assess_reliability(result, source_verified=True, count_verified=True, evidence_current=True)
+    assert not assessment.decision_eligible, '90 actual vs 100 expected cannot be a zero-variance reliable count'
+    assert assessment.verification_required
 
 
 @pytest.mark.parametrize('source,count,current,confidence,eligible', [
