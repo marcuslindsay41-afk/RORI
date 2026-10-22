@@ -38,10 +38,11 @@
 
 ## Testing the Setup
 
-1. **Run the test script:**
+1. **Run the isolated automated suite:**
    ```bash
    .venv\Scripts\activate
-   python scripts/test_run.py
+   python -m pip install -r requirements-test.txt
+   python -m pytest
    ```
 
 2. **Run the simulation:**

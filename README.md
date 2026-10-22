@@ -42,18 +42,16 @@ uvicorn app.main:app --reload
 
 Then open http://127.0.0.1:8000/health
 
-## Smoke test
+## Automated tests
 
-1. App imports and routes register (needs `DATABASE_URL` set, no DB connection required):
+```bash
+.venv/bin/python -m pip install -r requirements-test.txt
+.venv/bin/python -m pytest
+```
 
-   ```bash
-   python -c "from app.main import app; print('APP_OK', len(app.routes))"
-   ```
-
-2. Health endpoint (with the server running): open http://127.0.0.1:8000/health and expect `{"status": "ok"}`.
-
-3. End-to-end analysis (writes seed data to the database in `DATABASE_URL`):
-
-   ```bash
-   python scripts/test_run.py
-   ```
+The suite runs without PostgreSQL, a running API server, or a `.env` file. Each
+local test uses a fresh temporary SQLite database and log directory, test-only
+API keys/JWT secret, and blocked outbound socket connections. Application routes,
+SQLAlchemy sessions, background analysis, password hashing, and JWT validation
+run normally. See [testing details](docs/testing.md) for scope, external checks,
+and the migration from standalone scripts.

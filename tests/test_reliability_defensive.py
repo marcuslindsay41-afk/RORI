@@ -1,6 +1,5 @@
 import unittest
 from decimal import Decimal
-from inspect import signature
 
 from app.data_reliability.models import (
     ReconciliationResult,
@@ -30,24 +29,13 @@ class TestReliabilityDefensive(unittest.TestCase):
             reason="Defensive test",
         )
 
-    def assess(self, result, **evidence):
-        parameters = signature(assess_reliability).parameters
-
-        kwargs = {
-            name: value
-            for name, value in evidence.items()
-            if name in parameters
-        }
-
-        return assess_reliability(result, **kwargs)
-
     def test_reliable_state_with_unexplained_variance(self):
         result = self.make_result(
             state=ReliabilityState.RELIABLE,
             variance=Decimal("10"),
         )
 
-        assessment = self.assess(result)
+        assessment = assess_reliability(result)
 
         self.assertFalse(
             assessment.decision_eligible,
@@ -60,7 +48,7 @@ class TestReliabilityDefensive(unittest.TestCase):
             variance=None,
         )
 
-        assessment = self.assess(result)
+        assessment = assess_reliability(result)
 
         self.assertFalse(
             assessment.decision_eligible,
@@ -74,7 +62,7 @@ class TestReliabilityDefensive(unittest.TestCase):
             verification_required=True,
         )
 
-        assessment = self.assess(result)
+        assessment = assess_reliability(result)
 
         self.assertFalse(assessment.decision_eligible)
 
@@ -86,7 +74,7 @@ class TestReliabilityDefensive(unittest.TestCase):
             verification_required=True,
         )
 
-        assessment = self.assess(result)
+        assessment = assess_reliability(result)
 
         self.assertFalse(assessment.decision_eligible)
 
@@ -97,7 +85,7 @@ class TestReliabilityDefensive(unittest.TestCase):
             verification_required=True,
         )
 
-        assessment = self.assess(result)
+        assessment = assess_reliability(result)
 
         self.assertFalse(assessment.decision_eligible)
 
