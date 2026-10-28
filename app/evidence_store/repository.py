@@ -16,6 +16,8 @@ from app.evidence_contracts.common import Scope, ReasonCode
 from .verification import VerificationRecord
 from .legacy import LegacyClaim
 
+_REPOSITORY_ORIGIN = object()
+
 MODELS = {'evidence': EvidenceRecord, 'snapshot': EvidenceSnapshot,
           'assessment': ReliabilityAssessment, 'eligibility': DecisionEligibility,
           'verification': VerificationRecord, 'legacy_claim': LegacyClaim}
@@ -43,12 +45,17 @@ class EvidenceRepository:
             if privileged is not False:
                 raise PermissionError('Runtime requires a non-owner, non-bypass database login')
             connection.execute(text('SELECT rori_evidence.lock_scope(:t)'), {'t': self.restaurant_id})
-            yield EvidenceTransaction(connection, self.restaurant_id)
+            yield EvidenceTransaction(connection, self.restaurant_id, _origin=_REPOSITORY_ORIGIN)
 
 
 class EvidenceTransaction:
-    def __init__(self, connection, restaurant_id):
+    def __init__(self, connection, restaurant_id, *, _origin=None):
         self.connection, self.restaurant_id = connection, restaurant_id
+        self._repository_origin = _origin
+
+    def require_repository_origin(self):
+        if self._repository_origin is not _REPOSITORY_ORIGIN or not self.connection.in_transaction():
+            raise PermissionError("Active EvidenceRepository transaction required")
 
     def append(self, kind, value, *, expected_revision=0):
         if kind not in MODELS:

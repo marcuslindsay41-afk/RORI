@@ -30,6 +30,8 @@ class AuditAction(str, Enum):
 
 
 class SubjectType(str, Enum):
+    INVENTORY_MANIFEST = 'inventory_manifest'
+    ASSESSMENT_RUN = 'assessment_run'
     VERIFICATION = 'verification'
     LEGACY_CLAIM = 'legacy_claim'
     EVIDENCE = 'evidence'
