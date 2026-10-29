@@ -25,10 +25,16 @@ logs. Ordinary tests reject socket connections. No HTTP auth dependency override
 are used: API keys, password hashing, JWT signing and verification are real.
 
 Tests assert persisted values, tenant isolation, upserts, transaction rollback,
-sync behavior, actual background analysis/logs, analysis formats and sorting,
-economic thresholds, health, legacy analysis routes, missing/bad authentication,
+sync behavior without recommendation scheduling, unconditional HTTP/service
+containment, offline economic calculations and thresholds, health, missing/bad authentication,
 invalid payloads/dates, and database error responses. Assertions and unexpected
 exceptions fail pytest; HTTP 500 is expected only in explicit failure tests.
+
+Boundary tests deny direct rule helpers, recommendation serializers/logging and
+simulation calls before I/O. Fresh subprocesses verify cold-start internal denial
+without operational configuration, and HTTP denial with only an in-memory SQLite
+URL for the ingestion application's required startup configuration. Pure numerical
+diagnostics accept supplied observations, never a database session or tenant ID.
 
 SQLite validates the current portable ORM operations, not PostgreSQL-specific
 behavior, infrastructure readiness, or Supabase service availability.

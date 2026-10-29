@@ -2,9 +2,15 @@
 
 This guide provides complete workflows for integrating Rori's restaurant analytics API with n8n automation platform.
 
+**Containment notice:** operational recommendation endpoints, including both
+analysis aliases and cached retrieval, are disabled with HTTP 503 /
+`OPERATIONAL_RECOMMENDATIONS_UNAVAILABLE`. Ingestion remains available but no
+longer triggers recommendation analysis. Historical analysis workflow examples
+below cannot enable operational recommendations.
+
 ## API Authentication
 
-All endpoints require API key authentication via header:
+Data ingestion endpoints require API key authentication via header:
 ```
 X-API-Key: test_key_1  # Restaurant 1
 X-API-Key: test_key_2  # Restaurant 2
@@ -22,7 +28,7 @@ X-API-Key: test_key_3  # Restaurant 3
 - `POST /data/inventory` - Inventory upserts
 - `POST /data/labor` - Labor data insertion
 - `POST /data/sync` - Combined data sync
-- `POST /run-analysis/{restaurant_id}` - Manual analysis trigger
+- `POST /run-analysis/{restaurant_id}` - Disabled; returns the containment denial
 
 ---
 
@@ -377,8 +383,8 @@ curl -X POST http://127.0.0.1:8000/data/sync \
 ```
 
 ### Monitoring
-- Check analysis results: `GET /run-analysis/1`
-- Review log files for background analysis
+- Recommendation analysis and retrieval return the containment denial; no GET analysis route exists.
+- Successful ingestion does not create background recommendation logs.
 - Monitor API response times
 - Track data consistency
 

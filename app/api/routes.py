@@ -1,6 +1,6 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
-from app.services.analysis_service import run_analysis
+from app.core.recommendation_containment import OPERATIONAL_RECOMMENDATIONS_UNAVAILABLE
 from app.api.analysis import router as analysis_router
 
 router = APIRouter()
@@ -15,14 +15,12 @@ def health():
 
 @router.post("/run-analysis")
 def post_run_analysis():
-    global _last_analysis_results
-    _last_analysis_results = run_analysis(1)  # Default to restaurant 1
-    return _last_analysis_results
+    raise HTTPException(status_code=503, detail=OPERATIONAL_RECOMMENDATIONS_UNAVAILABLE)
 
 
 @router.get("/recommendations")
 def get_recommendations():
-    return _last_analysis_results
+    raise HTTPException(status_code=503, detail=OPERATIONAL_RECOMMENDATIONS_UNAVAILABLE)
 
 
 # Include the new analysis router

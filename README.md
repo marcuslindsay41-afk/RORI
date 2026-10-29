@@ -42,6 +42,20 @@ uvicorn app.main:app --reload
 
 Then open http://127.0.0.1:8000/health
 
+## Legacy recommendation containment
+
+Operational recommendations are unavailable. `POST /run-analysis`,
+`GET /recommendations`, and both `POST /run-analysis/{restaurant_id}` and
+`POST /analysis/run-analysis/{restaurant_id}` return HTTP 503 with
+`{"detail":"OPERATIONAL_RECOMMENDATIONS_UNAVAILABLE"}`, regardless of credentials.
+Legacy service calls and rule aggregation also deny unconditionally, without a
+configuration switch. Authenticated `/data/*` ingestion still persists data but
+does not schedule analysis. Offline economic calculations remain available for
+isolated tests; they do not authorize recommendations.
+Legacy rule helpers, recommendation formatting/logging and simulation entry points
+also deny. `app.rules.calculations` provides numerical-only diagnostics from explicit
+observations, without database access or operational instructions.
+
 ## Automated tests
 
 ```bash
@@ -52,6 +66,6 @@ Then open http://127.0.0.1:8000/health
 The suite runs without PostgreSQL, a running API server, or a `.env` file. Each
 local test uses a fresh temporary SQLite database and log directory, test-only
 API keys/JWT secret, and blocked outbound socket connections. Application routes,
-SQLAlchemy sessions, background analysis, password hashing, and JWT validation
+SQLAlchemy ingestion, recommendation containment, password hashing, and JWT validation
 run normally. See [testing details](docs/testing.md) for scope, external checks,
 and the migration from standalone scripts.

@@ -1,13 +1,12 @@
 from datetime import datetime
 from typing import List, Dict, Any
 
-from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.models.models import SessionLocal, Sales, Inventory, Labor
 from app.core.security import get_restaurant_id
-from app.services.analysis_service import run_full_analysis
 from app.core.ingestion_logger import log_ingestion
 
 router = APIRouter()
@@ -41,7 +40,6 @@ class SyncPayload(BaseModel):
 @router.post("/data/sync")
 def sync_restaurant_data(
     payload: SyncPayload, 
-    background_tasks: BackgroundTasks,
     restaurant_id: int = Depends(get_restaurant_id)
 ):
     """
@@ -54,8 +52,9 @@ def sync_restaurant_data(
     Returns:
         JSON response with status and counts of rows processed
     """
-    session = SessionLocal()
+    session = None
     try:
+        session = SessionLocal()
         sales_rows = 0
         inventory_rows = 0
         labor_rows = 0
@@ -151,9 +150,6 @@ def sync_restaurant_data(
         if labor_rows > 0:
             log_ingestion("labor", restaurant_id, labor_rows, "success")
         
-        # Schedule background analysis
-        background_tasks.add_task(run_full_analysis, restaurant_id)
-        
         return {
             "status": "success",
             "sales_rows": sales_rows,
@@ -163,16 +159,19 @@ def sync_restaurant_data(
         
     except HTTPException:
         # Re-raise HTTP exceptions as-is
-        session.rollback()
+        if session is not None:
+            session.rollback()
         log_ingestion("sync", restaurant_id, 0, "error")
         raise
-    except Exception as e:
+    except Exception:
         # Handle other exceptions
-        session.rollback()
+        if session is not None:
+            session.rollback()
         log_ingestion("sync", restaurant_id, 0, "error")
         raise HTTPException(
             status_code=500,
-            detail=f"Database error: {str(e)}"
+            detail="DATA_INGESTION_UNAVAILABLE"
         )
     finally:
-        session.close()
+        if session is not None:
+            session.close()

@@ -1,12 +1,11 @@
 from datetime import datetime
 from typing import List
 
-from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
 
 from app.models.models import SessionLocal, Labor
 from app.core.security import get_restaurant_id
-from app.services.analysis_service import run_full_analysis
 from app.core.ingestion_logger import log_ingestion
 
 router = APIRouter()
@@ -23,7 +22,7 @@ class LaborPayload(BaseModel):
 
 
 @router.post("/data/labor")
-def create_labor_data(payload: LaborPayload, background_tasks: BackgroundTasks, restaurant_id: int = Depends(get_restaurant_id)):
+def create_labor_data(payload: LaborPayload, restaurant_id: int = Depends(get_restaurant_id)):
     """
     Accept labor data and insert into database.
     
@@ -34,8 +33,9 @@ def create_labor_data(payload: LaborPayload, background_tasks: BackgroundTasks, 
     Returns:
         JSON response with status and number of rows inserted
     """
-    session = SessionLocal()
+    session = None
     try:
+        session = SessionLocal()
         rows_inserted = 0
         
         for labor_item in payload.labor:
@@ -76,9 +76,6 @@ def create_labor_data(payload: LaborPayload, background_tasks: BackgroundTasks, 
         # Log successful ingestion
         log_ingestion("labor", restaurant_id, rows_inserted, "success")
         
-        # Schedule background analysis
-        background_tasks.add_task(run_full_analysis, restaurant_id)
-        
         return {
             "status": "success",
             "rows_inserted": rows_inserted
@@ -86,16 +83,19 @@ def create_labor_data(payload: LaborPayload, background_tasks: BackgroundTasks, 
         
     except HTTPException:
         # Re-raise HTTP exceptions as-is
-        session.rollback()
+        if session is not None:
+            session.rollback()
         log_ingestion("labor", restaurant_id, 0, "error")
         raise
-    except Exception as e:
+    except Exception:
         # Handle other exceptions
-        session.rollback()
+        if session is not None:
+            session.rollback()
         log_ingestion("labor", restaurant_id, 0, "error")
         raise HTTPException(
             status_code=500,
-            detail=f"Database error: {str(e)}"
+            detail="DATA_INGESTION_UNAVAILABLE"
         )
     finally:
-        session.close()
+        if session is not None:
+            session.close()
